@@ -1,0 +1,80 @@
+name: Test and Merge to Main
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-merge:
+    name: Test & Merge
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for merge
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Cache virtual environment
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-py3.10-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            venv-${{ runner.os }}-py3.10-
+      
+      - name: Install dependencies
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv pip install -e ".[dev]"
+      
+      - name: Run tests
+        run: |
+          source .venv/bin/activate
+          pytest tests/test_models.py tests/test_database.py tests/test_store.py \
+            --cov=src --cov-report=term-missing -v
+      
+      - name: Merge to main
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Fetch and checkout main
+          git fetch origin main
+          git checkout main
+          
+          # Merge dev into main
+          git merge origin/dev --no-ff -m "chore: merge dev to main after successful tests
+          
+          ✅ All tests passed
+          🤖 Automated merge from dev branch
+          
+          Commit: ${{ github.sha }}"
+          
+          # Push to main
+          git push origin main
+          
+          echo "✅ Successfully merged dev to main"
+      
+      - name: Summary
+        if: success()
+        run: |
+          echo "## ✅ Tests Passed & Merged!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Changes from \`dev\` have been merged to \`main\`." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

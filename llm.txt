@@ -1,0 +1,256 @@
+# noGojira - AI Agent Project Management System
+
+## Overview
+noGojira is a local-first project management system designed for AI agent teams. It provides structured task management through Projects → PRDs → Stories → Tasks with full commenting and progress tracking.
+
+## Quick Start
+
+### Installation
+```bash
+# Run directly from GitHub
+uvx --from git+https://github.com/fellowork/noGojira nogojira
+
+# Or install locally
+uv pip install -e .
+```
+
+### MCP Configuration
+Add to your MCP settings (e.g., Claude Desktop):
+```json
+{
+  "mcpServers": {
+    "noGojira": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/fellowork/noGojira", "nogojira"]
+    }
+  }
+}
+```
+
+## Core Concepts
+
+### Hierarchy
+```
+Project
+└── PRD (Product Requirement Document)
+    └── Story (User Story / Epic)
+        └── Task (Concrete work item)
+            └── Comment (Discussion thread)
+```
+
+### Entity States
+
+**PRD**: draft → active → completed → archived
+**Story**: todo → in_progress → review → done → archived
+**Task**: todo → in_progress → blocked → review → done → archived
+
+## Available Tools (20 total)
+
+### Project Management (3 tools)
+- `create_project` - Create a new project container
+- `list_projects` - List all projects
+- `get_project` - Get project with statistics
+
+### PRD Management (4 tools)
+- `create_prd` - Create a Product Requirement Document
+- `get_prd` - Get PRD with all Stories
+- `update_prd` - Update PRD fields
+- `list_prds` - List PRDs with filters
+
+### Story Management (4 tools)
+- `create_story` - Create a User Story under a PRD
+- `get_story` - Get Story with all Tasks
+- `update_story` - Update Story fields
+- `list_stories` - List Stories with filters
+
+### Task Management (5 tools)
+- `create_task` - Create a Task under a Story
+- `get_task` - Get Task with comments
+- `update_task` - Update Task fields
+- `list_tasks` - List Tasks with filters
+- `get_agent_workload` - Get all Tasks for an agent
+
+### Comments (2 tools)
+- `add_comment` - Add comment to PRD/Story/Task
+- `get_comments` - Get all comments for an entity
+
+### Progress Tracking (2 tools)
+- `get_project_progress` - Overall project statistics
+- `get_story_progress` - Story completion progress
+
+## Common Workflows
+
+### 1. Create a Project and PRD
+```
+1. create_project(name="E-commerce Platform")
+2. create_prd(project_id="...", agent_id="po-agent", 
+              title="User Authentication", description="...")
+```
+
+### 2. Break Down PRD into Stories
+```
+3. create_story(prd_id="...", agent_id="po-agent",
+                title="Login with Email", description="...")
+4. create_story(prd_id="...", agent_id="po-agent",
+                title="Social Login", description="...")
+```
+
+### 3. Create Tasks for Developers
+```
+5. create_task(story_id="...", agent_id="po-agent",
+               title="Design API endpoints", 
+               assigned_to="backend-agent", description="...")
+6. create_task(story_id="...", agent_id="po-agent",
+               title="Implement JWT", 
+               assigned_to="backend-agent", description="...")
+```
+
+### 4. Developer Picks Up Work
+```
+7. get_agent_workload(agent_id="backend-agent", status="todo")
+8. update_task(task_id="...", status="in_progress")
+9. add_comment(entity_type="task", entity_id="...",
+               agent_id="backend-agent",
+               content="Started working on JWT implementation")
+```
+
+### 5. Track Progress
+```
+10. get_story_progress(story_id="...")
+11. get_project_progress(project_id="...")
+```
+
+### 6. QA Review
+```
+12. list_tasks(status="review")
+13. add_comment(entity_type="task", entity_id="...",
+                agent_id="qa-agent", comment_type="question",
+                content="What about token refresh?")
+14. update_task(task_id="...", status="in_progress")  # Send back
+```
+
+## Comment Types
+- `comment` - General comment
+- `question` - Question requiring answer
+- `decision` - Decision made
+- `blocker` - Blocking issue
+
+## Best Practices
+
+### For Product Owner Agents
+1. Create clear, detailed PRDs with acceptance criteria
+2. Break down into manageable Stories (5-13 story points)
+3. Define clear acceptance criteria for each Story
+4. Review and update Task progress regularly
+
+### For Developer Agents
+1. Check your workload before picking new Tasks
+2. Update Task status promptly (todo → in_progress → review → done)
+3. Add comments when making progress or encountering blockers
+4. Use dependencies to manage Task ordering
+
+### For QA Agents
+1. Monitor Tasks in "review" status
+2. Add detailed feedback via comments
+3. Use "question" type for clarifications
+4. Use "blocker" type for critical issues
+
+### Task Dependencies
+```
+create_task(story_id="...", title="Task 2",
+            depends_on=["task-1-id"], ...)
+```
+
+## Data Storage
+
+All data stored locally in SQLite:
+```
+~/.local/share/nogojira/
+└── nogojira.db
+```
+
+### Environment Variables
+```bash
+# Custom data directory
+export NOGOJIRA_DATA_DIR=/custom/path
+
+# Custom database path
+export NOGOJIRA_DB_PATH=/custom/db.sqlite
+```
+
+## Example: Complete Workflow
+
+```python
+# 1. PO Agent creates project structure
+project = create_project(name="API Gateway")
+prd = create_prd(project_id=project.id, agent_id="po-agent",
+                 title="Rate Limiting", description="...")
+
+# 2. PO breaks down into stories
+story1 = create_story(prd_id=prd.id, agent_id="po-agent",
+                      title="Token bucket algorithm", 
+                      story_points=5, ...)
+story2 = create_story(prd_id=prd.id, agent_id="po-agent",
+                      title="Redis integration", 
+                      story_points=8, ...)
+
+# 3. Create tasks
+task1 = create_task(story_id=story1.id, agent_id="po-agent",
+                    title="Implement token bucket",
+                    assigned_to="backend-agent", ...)
+task2 = create_task(story_id=story1.id, agent_id="po-agent",
+                    title="Add unit tests",
+                    assigned_to="backend-agent",
+                    depends_on=[task1.id], ...)
+
+# 4. Backend agent picks up work
+workload = get_agent_workload(agent_id="backend-agent", status="todo")
+update_task(task_id=task1.id, status="in_progress")
+
+# 5. Add progress comments
+add_comment(entity_type="task", entity_id=task1.id,
+            agent_id="backend-agent",
+            content="Implemented basic token bucket")
+
+# 6. Mark as ready for review
+update_task(task_id=task1.id, status="review")
+
+# 7. QA reviews
+add_comment(entity_type="task", entity_id=task1.id,
+            agent_id="qa-agent", comment_type="question",
+            content="How does this handle race conditions?")
+
+# 8. Track overall progress
+progress = get_project_progress(project_id=project.id)
+# Returns: completion_percentage, tasks_by_status, tasks_by_agent, etc.
+```
+
+## Error Handling
+
+All tools return clear error messages:
+- "Project X not found" - Invalid project_id
+- "PRD X not found" - Invalid prd_id
+- "Dependency task X not found" - Invalid task dependency
+
+## Architecture
+
+- **Local-First**: 100% local SQLite, no external dependencies
+- **Agent-Native**: Designed for AI agents via MCP
+- **Structured**: Clear hierarchy and relationships
+- **Validated**: Pydantic models with validation
+- **Fast**: SQLite with proper indexes
+
+## Related Projects
+
+- **memAlpha** - Semantic memory for AI agents (https://github.com/fellowork/memAlpha)
+
+## Support
+
+- Repository: https://github.com/fellowork/noGojira
+- Issues: https://github.com/fellowork/noGojira/issues
+- License: MIT
+
+---
+
+**Kill the monster. Ship the code.** 🦖⚔️
+
