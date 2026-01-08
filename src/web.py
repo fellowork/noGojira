@@ -142,11 +142,22 @@ def navbar() -> rx.Component:
                 margin_left="48px",
             ),
             rx.spacer(),
-            # Right side: Status indicator
-            rx.badge(
-                "Live",
-                color_scheme="green",
-                variant="soft",
+            # Right side: Theme toggle & Status indicator
+            rx.hstack(
+                rx.button(
+                    rx.icon("sun", size=18),
+                    on_click=rx.toggle_color_mode,
+                    variant="ghost",
+                    size="2",
+                    cursor="pointer",
+                ),
+                rx.badge(
+                    "Live",
+                    color_scheme="green",
+                    variant="soft",
+                ),
+                spacing="3",
+                align="center",
             ),
             direction="row",
             justify="start",
