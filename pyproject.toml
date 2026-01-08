@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "AI Agent Project Management System - Kill the monster. Ship the code."
 authors = [{ name = "fellowork GmbH" }]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 keywords = ["ai", "agents", "project-management", "mcp", "workflow"]
 classifiers = [
@@ -21,6 +21,7 @@ dependencies = [
     "mcp>=1.0.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
+    "reflex>=0.6.0",
 ]
 
 [project.optional-dependencies]
@@ -33,7 +34,7 @@ dev = [
 ]
 
 [project.scripts]
-nogojira = "src.server:run"
+nogojira = "src.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/fellowork/noGojira"

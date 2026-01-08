@@ -40,6 +40,10 @@ Run directly from GitHub (no checkout needed):
 uvx --from git+https://github.com/fellowork/noGojira nogojira
 ```
 
+**That's it!** One command starts:
+- ✅ MCP Server (stdio) for AI agents
+- ✅ Web UI at http://localhost:3000 for monitoring
+
 ### MCP Configuration
 
 Add to your MCP settings (e.g., Claude Desktop `claude_desktop_config.json`):
@@ -49,11 +53,33 @@ Add to your MCP settings (e.g., Claude Desktop `claude_desktop_config.json`):
   "mcpServers": {
     "noGojira": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/fellowork/noGojira", "nogojira"]
+      "args": [
+        "--from",
+        "git+https://github.com/fellowork/noGojira",
+        "nogojira"
+      ]
     }
   }
 }
 ```
+
+**This automatically starts BOTH:**
+- ✅ MCP Server (stdio) - for AI agents
+- ✅ Web UI (http://localhost:3000) - for monitoring
+
+No extra configuration needed! Just open your browser to see agents work.
+
+### Monitoring
+
+While Claude (or any AI agent) uses the MCP interface, **you** can monitor everything in real-time:
+
+**Open http://localhost:3000** to see:
+- 📊 Live statistics (projects, PRDs, stories, tasks)
+- 👥 Agent workload and assignments
+- 🔄 Recent activity and updates
+- 📁 Browse all projects and tasks
+
+**No setup required** - it starts automatically!
 
 ## 📚 Hierarchical Structure
 
@@ -197,6 +223,24 @@ export NOGOJIRA_DATA_DIR=/custom/path
 export NOGOJIRA_DB_PATH=/custom/db.sqlite
 ```
 
+## 🌐 Web Interface
+
+The web interface runs automatically when you start noGojira. No extra installation needed!
+
+### Features
+
+**📊 Dashboard** (Available Now)
+- Live statistics (projects, PRDs, stories, tasks)
+- Project overview with status indicators
+- Auto-refresh on page load
+
+**🎯 Coming Soon**
+- Agent workload visualization
+- Task timeline and progress charts  
+- Real-time activity feed
+- Kanban board for task management
+- Story/PRD detail views
+
 ## 🧪 Development
 
 ### Setup
@@ -206,7 +250,7 @@ export NOGOJIRA_DB_PATH=/custom/db.sqlite
 git clone https://github.com/fellowork/noGojira
 cd noGojira
 
-# Install with dev dependencies (using uv)
+# Install with dev dependencies
 uv pip install -e ".[dev]"
 ```
 
