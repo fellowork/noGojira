@@ -2,6 +2,7 @@
 
 
 from .database import Database
+from .events import Event, EventType, get_event_queue
 from .models import (
     PRD,
     Comment,
@@ -34,12 +35,25 @@ class Store:
     def __init__(self, db: Database | None = None):
         """Initialize store with database."""
         self.db = db or Database()
+        self.events = get_event_queue()
 
     # Project operations
-    def create_project(self, project_create: ProjectCreate) -> Project:
+    def create_project(self, project_create: ProjectCreate, agent_id: str = "system") -> Project:
         """Create a new project."""
         project = Project(**project_create.model_dump())
-        return self.db.create_project(project)
+        result = self.db.create_project(project)
+        
+        # Emit event
+        self.events.push(Event(
+            event_type=EventType.PROJECT_CREATED,
+            agent_id=agent_id,
+            entity_type="project",
+            entity_id=result.id,
+            entity_name=result.name,
+            details={"description": result.description},
+        ))
+        
+        return result
 
     def get_project(self, project_id: str) -> ProjectWithStats | None:
         """Get a project by ID with statistics."""
@@ -71,7 +85,7 @@ class Store:
         return self.db.update_project(project_id, updates)
 
     # PRD operations
-    def create_prd(self, prd_create: PRDCreate) -> PRD:
+    def create_prd(self, prd_create: PRDCreate, agent_id: str = "system") -> PRD:
         """Create a new PRD."""
         # Verify project exists
         project = self.db.get_project(prd_create.project_id)
@@ -79,7 +93,19 @@ class Store:
             raise ValueError(f"Project {prd_create.project_id} not found")
 
         prd = PRD(**prd_create.model_dump())
-        return self.db.create_prd(prd)
+        result = self.db.create_prd(prd)
+        
+        # Emit event
+        self.events.push(Event(
+            event_type=EventType.PRD_CREATED,
+            agent_id=agent_id,
+            entity_type="prd",
+            entity_id=result.id,
+            entity_name=result.title,
+            details={"project_id": result.project_id, "status": result.status},
+        ))
+        
+        return result
 
     def get_prd(self, prd_id: str) -> PRD | None:
         """Get a PRD by ID."""
@@ -132,7 +158,7 @@ class Store:
         return self.db.update_prd(prd_id, updates)
 
     # Story operations
-    def create_story(self, story_create: StoryCreate) -> Story:
+    def create_story(self, story_create: StoryCreate, agent_id: str = "system") -> Story:
         """Create a new story."""
         # Verify PRD exists
         prd = self.db.get_prd(story_create.prd_id)
@@ -140,7 +166,19 @@ class Store:
             raise ValueError(f"PRD {story_create.prd_id} not found")
 
         story = Story(**story_create.model_dump())
-        return self.db.create_story(story)
+        result = self.db.create_story(story)
+        
+        # Emit event
+        self.events.push(Event(
+            event_type=EventType.STORY_CREATED,
+            agent_id=agent_id,
+            entity_type="story",
+            entity_id=result.id,
+            entity_name=result.title,
+            details={"prd_id": result.prd_id, "status": result.status},
+        ))
+        
+        return result
 
     def get_story(self, story_id: str) -> Story | None:
         """Get a story by ID."""
@@ -187,7 +225,7 @@ class Store:
         return self.db.update_story(story_id, updates)
 
     # Task operations
-    def create_task(self, task_create: TaskCreate) -> Task:
+    def create_task(self, task_create: TaskCreate, agent_id: str = "system") -> Task:
         """Create a new task."""
         # Verify story exists
         story = self.db.get_story(task_create.story_id)
@@ -201,7 +239,19 @@ class Store:
                 raise ValueError(f"Dependency task {dep_id} not found")
 
         task = Task(**task_create.model_dump())
-        return self.db.create_task(task)
+        result = self.db.create_task(task)
+        
+        # Emit event
+        self.events.push(Event(
+            event_type=EventType.TASK_CREATED,
+            agent_id=agent_id,
+            entity_type="task",
+            entity_id=result.id,
+            entity_name=result.title,
+            details={"story_id": result.story_id, "assigned_to": result.assigned_to},
+        ))
+        
+        return result
 
     def get_task(self, task_id: str) -> Task | None:
         """Get a task by ID."""

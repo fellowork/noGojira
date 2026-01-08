@@ -360,7 +360,8 @@ def create_server() -> Server:
             # Project Tools
             if name == "create_project":
                 project_create = ProjectCreate(**arguments)
-                project = store.create_project(project_create)
+                agent_id = arguments.get("agent_id", "mcp_agent")
+                project = store.create_project(project_create, agent_id=agent_id)
                 result = project.model_dump_json(indent=2)
 
             elif name == "list_projects":
@@ -383,7 +384,8 @@ def create_server() -> Server:
             # PRD Tools
             elif name == "create_prd":
                 prd_create = PRDCreate(**arguments)
-                prd = store.create_prd(prd_create)
+                agent_id = arguments.get("agent_id", "mcp_agent")
+                prd = store.create_prd(prd_create, agent_id=agent_id)
                 result = prd.model_dump_json(indent=2)
 
             elif name == "get_prd":
@@ -412,7 +414,8 @@ def create_server() -> Server:
             # Story Tools
             elif name == "create_story":
                 story_create = StoryCreate(**arguments)
-                story = store.create_story(story_create)
+                agent_id = arguments.get("agent_id", "mcp_agent")
+                story = store.create_story(story_create, agent_id=agent_id)
                 result = story.model_dump_json(indent=2)
 
             elif name == "get_story":
@@ -444,7 +447,8 @@ def create_server() -> Server:
             # Task Tools
             elif name == "create_task":
                 task_create = TaskCreate(**arguments)
-                task = store.create_task(task_create)
+                agent_id = arguments.get("agent_id", "mcp_agent")
+                task = store.create_task(task_create, agent_id=agent_id)
                 result = task.model_dump_json(indent=2)
 
             elif name == "get_task":
