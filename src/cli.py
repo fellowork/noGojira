@@ -1,5 +1,6 @@
 """CLI entry point for noGojira - starts MCP + Web UI."""
 
+import os
 import subprocess
 import sys
 import threading
@@ -8,7 +9,7 @@ from pathlib import Path
 
 def main():
     """
-    Start noGojira: MCP Server (stdio) + Web UI (http://localhost:3000).
+    Start noGojira: MCP Server (stdio) + Web UI (http://localhost:8383).
     
     This is the default command when called from MCP clients like Claude Desktop.
     No arguments needed, everything just works.
@@ -22,18 +23,30 @@ def main():
     print("", file=sys.stderr)
     
     # Start Web UI in background thread using reflex run
-    print("🌐 Starting Web UI at http://localhost:3000", file=sys.stderr)
+    print("🌐 Starting Web UI at http://localhost:8383", file=sys.stderr)
     
     def run_web():
         try:
-            # Get project root directory
+            # Get project root directory (where rxconfig.py is located)
             project_root = Path(__file__).parent.parent
+            
+            # Debug: Print the path we're using
+            print(f"📂 Project root: {project_root}", file=sys.stderr)
+            print(f"📄 rxconfig.py exists: {(project_root / 'rxconfig.py').exists()}", file=sys.stderr)
+            
+            # Ensure the package directory is in PYTHONPATH
+            env = os.environ.copy()
+            pythonpath = str(project_root)
+            if 'PYTHONPATH' in env:
+                pythonpath = f"{pythonpath}{os.pathsep}{env['PYTHONPATH']}"
+            env['PYTHONPATH'] = pythonpath
             
             # Run reflex in the project directory
             # Keep stderr visible to see any errors
             subprocess.run(
                 ["reflex", "run", "--loglevel", "warning"],
-                cwd=project_root,
+                cwd=str(project_root),  # Ensure it's a string
+                env=env,
                 stderr=sys.stderr,
             )
         except Exception as e:

@@ -42,7 +42,7 @@ uvx --from git+https://github.com/fellowork/noGojira nogojira
 
 **That's it!** One command starts:
 - ✅ MCP Server (stdio) for AI agents
-- ✅ Web UI at http://localhost:3000 for monitoring
+- ✅ Web UI at http://localhost:8383 for monitoring
 
 ### MCP Configuration
 
@@ -65,7 +65,7 @@ Add to your MCP settings (e.g., Claude Desktop `claude_desktop_config.json`):
 
 **This automatically starts BOTH:**
 - ✅ MCP Server (stdio) - for AI agents
-- ✅ Web UI (http://localhost:3000) - for monitoring
+- ✅ Web UI (http://localhost:8383) - for monitoring
 
 No extra configuration needed! Just open your browser to see agents work.
 
@@ -73,13 +73,21 @@ No extra configuration needed! Just open your browser to see agents work.
 
 While Claude (or any AI agent) uses the MCP interface, **you** can monitor everything in real-time:
 
-**Open http://localhost:3000** to see:
+**Open http://localhost:8383** to see:
 - 📊 Live statistics (projects, PRDs, stories, tasks)
 - 👥 Agent workload and assignments
 - 🔄 Recent activity and updates
 - 📁 Browse all projects and tasks
 
 **No setup required** - it starts automatically!
+
+### Port Configuration
+
+**Default Ports:**
+- 🌐 **Frontend (Web UI)**: `8383` - http://localhost:8383
+- ⚙️ **Backend (API)**: `8484` - http://localhost:8484
+
+You can customize these ports by editing `rxconfig.py` in your installation if needed.
 
 ## 📚 Hierarchical Structure
 
