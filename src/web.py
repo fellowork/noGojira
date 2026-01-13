@@ -46,6 +46,12 @@ class State(rx.State):
     show_story_modal: bool = False
     selected_task: dict = {}
     selected_story: dict = {}
+    
+    # Delete confirmation state
+    show_delete_project_dialog: bool = False
+    show_delete_story_dialog: bool = False
+    show_delete_task_dialog: bool = False
+    item_to_delete_id: str = ""
 
     def on_load(self):
         """Load initial data."""
@@ -134,6 +140,56 @@ class State(rx.State):
     def close_story_modal(self):
         """Close story detail modal."""
         self.show_story_modal = False
+    
+    def confirm_delete_project(self, project_id: str):
+        """Open confirmation dialog for project deletion."""
+        self.item_to_delete_id = project_id
+        self.show_delete_project_dialog = True
+    
+    def delete_project_confirmed(self):
+        """Delete the project after confirmation."""
+        if self.item_to_delete_id:
+            store.delete_project(self.item_to_delete_id)
+            self.show_delete_project_dialog = False
+            self.item_to_delete_id = ""
+            # Navigate back to projects list
+            self.set_page("projects")
+            self.refresh_all()
+    
+    def confirm_delete_story(self, story_id: str):
+        """Open confirmation dialog for story deletion."""
+        self.item_to_delete_id = story_id
+        self.show_delete_story_dialog = True
+    
+    def delete_story_confirmed(self):
+        """Delete the story after confirmation."""
+        if self.item_to_delete_id:
+            store.delete_story(self.item_to_delete_id)
+            self.show_delete_story_dialog = False
+            self.item_to_delete_id = ""
+            # Refresh project details
+            self.load_project_details()
+    
+    def confirm_delete_task(self, task_id: str):
+        """Open confirmation dialog for task deletion."""
+        self.item_to_delete_id = task_id
+        self.show_delete_task_dialog = True
+    
+    def delete_task_confirmed(self):
+        """Delete the task after confirmation."""
+        if self.item_to_delete_id:
+            store.delete_task(self.item_to_delete_id)
+            self.show_delete_task_dialog = False
+            self.item_to_delete_id = ""
+            # Refresh project details
+            self.load_project_details()
+    
+    def cancel_delete(self):
+        """Cancel deletion and close all delete dialogs."""
+        self.show_delete_project_dialog = False
+        self.show_delete_story_dialog = False
+        self.show_delete_task_dialog = False
+        self.item_to_delete_id = ""
     
     def view_project_details(self, project_id: str):
         """Navigate to project details page."""
@@ -552,19 +608,55 @@ def task_card(task: dict) -> rx.Component:
     """Single task card for the board."""
     return rx.card(
         rx.vstack(
-            rx.text(
-                task["title"],
-                size="2",
-                weight="bold",
-                color=rx.color("gray", 12),
+            # Header with title and menu
+            rx.hstack(
+                rx.text(
+                    task["title"],
+                    size="2",
+                    weight="bold",
+                    color=rx.color("gray", 12),
+                    flex="1",
+                    on_click=lambda: State.open_task_modal(task),
+                    style={":hover": {"cursor": "pointer"}},
+                ),
+                rx.menu.root(
+                    rx.menu.trigger(
+                        rx.icon_button(
+                            rx.icon("ellipsis", size=16),
+                            variant="ghost",
+                            size="1",
+                            cursor="pointer",
+                            color_scheme="gray",
+                        ),
+                    ),
+                    rx.menu.content(
+                        rx.menu.item(
+                            "Details anzeigen",
+                            on_click=lambda: State.open_task_modal(task),
+                        ),
+                        rx.menu.separator(),
+                        rx.menu.item(
+                            "Löschen",
+                            color="red",
+                            on_click=lambda: State.confirm_delete_task(task["id"]),
+                        ),
+                    ),
+                ),
+                width="100%",
+                align="center",
             ),
-            rx.text(
-                task["description"],
-                size="1",
-                color=rx.color("gray", 10),
-                overflow="hidden",
-                text_overflow="ellipsis",
-                white_space="nowrap",
+            rx.box(
+                rx.text(
+                    task["description"],
+                    size="1",
+                    color=rx.color("gray", 10),
+                    overflow="hidden",
+                    text_overflow="ellipsis",
+                    white_space="nowrap",
+                ),
+                on_click=lambda: State.open_task_modal(task),
+                style={":hover": {"cursor": "pointer"}},
+                width="100%",
             ),
             rx.divider(),
             rx.hstack(
@@ -589,13 +681,6 @@ def task_card(task: dict) -> rx.Component:
         ),
         width="100%",
         padding="12px",
-        on_click=lambda: State.open_task_modal(task),
-        style={
-            ":hover": {
-                "border_color": rx.color("grass", 8),
-                "cursor": "pointer",
-            },
-        },
     )
 
 
@@ -672,8 +757,10 @@ def story_card(story: dict) -> rx.Component:
                     story["title"],
                     size="3",
                     weight="bold",
+                    flex="1",
+                    on_click=lambda: State.open_story_modal(story),
+                    style={":hover": {"cursor": "pointer"}},
                 ),
-                rx.spacer(),
                 rx.badge(
                     story["status"],
                     color_scheme=rx.cond(
@@ -687,21 +774,54 @@ def story_card(story: dict) -> rx.Component:
                     ),
                     variant="soft",
                 ),
+                rx.menu.root(
+                    rx.menu.trigger(
+                        rx.icon_button(
+                            rx.icon("ellipsis", size=16),
+                            variant="ghost",
+                            size="1",
+                            cursor="pointer",
+                            color_scheme="gray",
+                        ),
+                    ),
+                    rx.menu.content(
+                        rx.menu.item(
+                            "Details anzeigen",
+                            on_click=lambda: State.open_story_modal(story),
+                        ),
+                        rx.menu.separator(),
+                        rx.menu.item(
+                            "Löschen",
+                            color="red",
+                            on_click=lambda: State.confirm_delete_story(story["id"]),
+                        ),
+                    ),
+                ),
                 width="100%",
                 align="center",
             ),
-            rx.text(
-                story["description"],
-                size="2",
-                color=rx.color("gray", 10),
-                overflow="hidden",
-                text_overflow="ellipsis",
-                white_space="nowrap",
+            rx.box(
+                rx.text(
+                    story["description"],
+                    size="2",
+                    color=rx.color("gray", 10),
+                    overflow="hidden",
+                    text_overflow="ellipsis",
+                    white_space="nowrap",
+                ),
+                on_click=lambda: State.open_story_modal(story),
+                style={":hover": {"cursor": "pointer"}},
+                width="100%",
             ),
-            rx.text(
-                f"PRD: {story['prd_title']}",
-                size="1",
-                color=rx.color("gray", 9),
+            rx.box(
+                rx.text(
+                    f"PRD: {story['prd_title']}",
+                    size="1",
+                    color=rx.color("gray", 9),
+                ),
+                on_click=lambda: State.open_story_modal(story),
+                style={":hover": {"cursor": "pointer"}},
+                width="100%",
             ),
             rx.divider(),
             rx.vstack(
@@ -742,13 +862,6 @@ def story_card(story: dict) -> rx.Component:
             width="100%",
         ),
         width="100%",
-        on_click=lambda: State.open_story_modal(story),
-        style={
-            ":hover": {
-                "border_color": rx.color("grass", 8),
-                "cursor": "pointer",
-            },
-        },
     )
 
 
@@ -765,6 +878,14 @@ def task_detail_modal() -> rx.Component:
                         weight="bold",
                     ),
                     rx.spacer(),
+                    rx.button(
+                        rx.icon("trash-2", size=16),
+                        on_click=lambda: State.confirm_delete_task(State.selected_task["id"]),
+                        variant="ghost",
+                        color_scheme="red",
+                        size="2",
+                        cursor="pointer",
+                    ),
                     rx.dialog.close(
                         rx.button(
                             rx.icon("x", size=18),
@@ -848,6 +969,14 @@ def story_detail_modal() -> rx.Component:
                         weight="bold",
                     ),
                     rx.spacer(),
+                    rx.button(
+                        rx.icon("trash-2", size=16),
+                        on_click=lambda: State.confirm_delete_story(State.selected_story["id"]),
+                        variant="ghost",
+                        color_scheme="red",
+                        size="2",
+                        cursor="pointer",
+                    ),
                     rx.dialog.close(
                         rx.button(
                             rx.icon("x", size=18),
@@ -926,12 +1055,115 @@ def story_detail_modal() -> rx.Component:
     )
 
 
+def delete_confirmation_dialogs() -> rx.Component:
+    """Confirmation dialogs for delete operations."""
+    return rx.fragment(
+        # Delete Project Dialog
+        rx.alert_dialog.root(
+            rx.alert_dialog.content(
+                rx.alert_dialog.title("Projekt löschen?"),
+                rx.alert_dialog.description(
+                    "Möchten Sie dieses Projekt wirklich löschen? Diese Aktion löscht auch alle PRDs, Stories und Tasks. Diese Aktion kann nicht rückgängig gemacht werden.",
+                    size="2",
+                    mb="4",
+                ),
+                rx.flex(
+                    rx.alert_dialog.cancel(
+                        rx.button(
+                            "Abbrechen",
+                            variant="soft",
+                            color_scheme="gray",
+                            on_click=State.cancel_delete,
+                        ),
+                    ),
+                    rx.alert_dialog.action(
+                        rx.button(
+                            "Löschen",
+                            variant="solid",
+                            color_scheme="red",
+                            on_click=State.delete_project_confirmed,
+                        ),
+                    ),
+                    spacing="3",
+                    justify="end",
+                ),
+            ),
+            open=State.show_delete_project_dialog,
+        ),
+        # Delete Story Dialog
+        rx.alert_dialog.root(
+            rx.alert_dialog.content(
+                rx.alert_dialog.title("Story löschen?"),
+                rx.alert_dialog.description(
+                    "Möchten Sie diese Story wirklich löschen? Diese Aktion löscht auch alle zugehörigen Tasks. Diese Aktion kann nicht rückgängig gemacht werden.",
+                    size="2",
+                    mb="4",
+                ),
+                rx.flex(
+                    rx.alert_dialog.cancel(
+                        rx.button(
+                            "Abbrechen",
+                            variant="soft",
+                            color_scheme="gray",
+                            on_click=State.cancel_delete,
+                        ),
+                    ),
+                    rx.alert_dialog.action(
+                        rx.button(
+                            "Löschen",
+                            variant="solid",
+                            color_scheme="red",
+                            on_click=State.delete_story_confirmed,
+                        ),
+                    ),
+                    spacing="3",
+                    justify="end",
+                ),
+            ),
+            open=State.show_delete_story_dialog,
+        ),
+        # Delete Task Dialog
+        rx.alert_dialog.root(
+            rx.alert_dialog.content(
+                rx.alert_dialog.title("Task löschen?"),
+                rx.alert_dialog.description(
+                    "Möchten Sie diesen Task wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+                    size="2",
+                    mb="4",
+                ),
+                rx.flex(
+                    rx.alert_dialog.cancel(
+                        rx.button(
+                            "Abbrechen",
+                            variant="soft",
+                            color_scheme="gray",
+                            on_click=State.cancel_delete,
+                        ),
+                    ),
+                    rx.alert_dialog.action(
+                        rx.button(
+                            "Löschen",
+                            variant="solid",
+                            color_scheme="red",
+                            on_click=State.delete_task_confirmed,
+                        ),
+                    ),
+                    spacing="3",
+                    justify="end",
+                ),
+            ),
+            open=State.show_delete_task_dialog,
+        ),
+    )
+
+
 def project_details_page() -> rx.Component:
     """Project details page with stories and task board."""
     return rx.box(
         # Modals
         task_detail_modal(),
         story_detail_modal(),
+        delete_confirmation_dialogs(),
         # Main content
         rx.vstack(
             # Compact header with all info in one card
@@ -980,7 +1212,14 @@ def project_details_page() -> rx.Component:
                         spacing="6",
                     ),
                     rx.box(width="8px"),  # Small spacer
-                    # Refresh button
+                    # Delete and Refresh buttons
+                    rx.button(
+                        rx.icon("trash-2", size=16),
+                        on_click=lambda: State.confirm_delete_project(State.selected_project_id),
+                        variant="ghost",
+                        color_scheme="red",
+                        size="2",
+                    ),
                     rx.button(
                         rx.icon("refresh_cw", size=16),
                         on_click=State.load_project_details,

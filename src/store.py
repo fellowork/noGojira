@@ -446,3 +446,83 @@ class Store:
             completion_percentage=completion_percentage,
         )
 
+    # Delete operations (cascading)
+    def delete_project(self, project_id: str) -> bool:
+        """Delete a project and all its PRDs, stories, and tasks (cascading)."""
+        # Get all PRDs for this project
+        prds = self.db.list_prds(project_id=project_id, limit=10000)
+        
+        # Delete all PRDs (which will cascade to stories and tasks)
+        for prd in prds:
+            self.delete_prd(prd.id)
+        
+        # Delete the project itself
+        return self.db.delete_project(project_id)
+    
+    def delete_prd(self, prd_id: str) -> bool:
+        """Delete a PRD and all its stories and tasks (cascading)."""
+        # Get all stories for this PRD
+        stories = self.db.list_stories(prd_id=prd_id, limit=10000)
+        
+        # Delete all stories (which will cascade to tasks)
+        for story in stories:
+            self.delete_story(story.id)
+        
+        # Delete the PRD itself
+        return self.db.delete_prd(prd_id)
+    
+    def delete_story(self, story_id: str) -> bool:
+        """Delete a story and all its tasks (cascading)."""
+        # Get all tasks for this story
+        tasks = self.db.list_tasks(story_id=story_id, limit=10000)
+        
+        # Delete all tasks
+        for task in tasks:
+            self.db.delete_task(task.id)
+        
+        # Delete the story itself
+        return self.db.delete_story(story_id)
+    
+    def delete_task(self, task_id: str) -> bool:
+        """Delete a single task."""
+        return self.db.delete_task(task_id)
+    # Delete operations (cascading)
+    def delete_project(self, project_id: str) -> bool:
+        """Delete a project and all its PRDs, stories, and tasks (cascading)."""
+        # Get all PRDs for this project
+        prds = self.db.list_prds(project_id=project_id, limit=10000)
+        
+        # Delete all PRDs (which will cascade to stories and tasks)
+        for prd in prds:
+            self.delete_prd(prd.id)
+        
+        # Delete the project itself
+        return self.db.delete_project(project_id)
+    
+    def delete_prd(self, prd_id: str) -> bool:
+        """Delete a PRD and all its stories and tasks (cascading)."""
+        # Get all stories for this PRD
+        stories = self.db.list_stories(prd_id=prd_id, limit=10000)
+        
+        # Delete all stories (which will cascade to tasks)
+        for story in stories:
+            self.delete_story(story.id)
+        
+        # Delete the PRD itself
+        return self.db.delete_prd(prd_id)
+    
+    def delete_story(self, story_id: str) -> bool:
+        """Delete a story and all its tasks (cascading)."""
+        # Get all tasks for this story
+        tasks = self.db.list_tasks(story_id=story_id, limit=10000)
+        
+        # Delete all tasks
+        for task in tasks:
+            self.db.delete_task(task.id)
+        
+        # Delete the story itself
+        return self.db.delete_story(story_id)
+    
+    def delete_task(self, task_id: str) -> bool:
+        """Delete a single task."""
+        return self.db.delete_task(task_id)

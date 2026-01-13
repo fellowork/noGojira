@@ -818,3 +818,43 @@ class Database:
 
             return total, completed
 
+    # Delete operations
+    def delete_project(self, project_id: str) -> bool:
+        """Delete a project."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "DELETE FROM projects WHERE id = ?",
+                (project_id,),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def delete_prd(self, prd_id: str) -> bool:
+        """Delete a PRD."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "DELETE FROM prds WHERE id = ?",
+                (prd_id,),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def delete_story(self, story_id: str) -> bool:
+        """Delete a story."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "DELETE FROM stories WHERE id = ?",
+                (story_id,),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def delete_task(self, task_id: str) -> bool:
+        """Delete a task."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "DELETE FROM tasks WHERE id = ?",
+                (task_id,),
+            )
+            conn.commit()
+            return cursor.rowcount > 0
