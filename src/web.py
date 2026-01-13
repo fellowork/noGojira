@@ -40,6 +40,12 @@ class State(rx.State):
     
     # UI state
     stories_expanded: bool = False
+    
+    # Modal state
+    show_task_modal: bool = False
+    show_story_modal: bool = False
+    selected_task: dict = {}
+    selected_story: dict = {}
 
     def on_load(self):
         """Load initial data."""
@@ -110,6 +116,24 @@ class State(rx.State):
     def toggle_stories(self):
         """Toggle stories section visibility."""
         self.stories_expanded = not self.stories_expanded
+    
+    def open_task_modal(self, task: dict):
+        """Open task detail modal."""
+        self.selected_task = task
+        self.show_task_modal = True
+    
+    def close_task_modal(self):
+        """Close task detail modal."""
+        self.show_task_modal = False
+    
+    def open_story_modal(self, story: dict):
+        """Open story detail modal."""
+        self.selected_story = story
+        self.show_story_modal = True
+    
+    def close_story_modal(self):
+        """Close story detail modal."""
+        self.show_story_modal = False
     
     def view_project_details(self, project_id: str):
         """Navigate to project details page."""
@@ -565,6 +589,7 @@ def task_card(task: dict) -> rx.Component:
         ),
         width="100%",
         padding="12px",
+        on_click=lambda: State.open_task_modal(task),
         style={
             ":hover": {
                 "border_color": rx.color("grass", 8),
@@ -717,12 +742,197 @@ def story_card(story: dict) -> rx.Component:
             width="100%",
         ),
         width="100%",
+        on_click=lambda: State.open_story_modal(story),
+        style={
+            ":hover": {
+                "border_color": rx.color("grass", 8),
+                "cursor": "pointer",
+            },
+        },
+    )
+
+
+def task_detail_modal() -> rx.Component:
+    """Modal to show full task details."""
+    return rx.dialog.root(
+        rx.dialog.content(
+            rx.vstack(
+                rx.hstack(
+                    rx.icon("check-circle", size=24, color=rx.color("grass", 9)),
+                    rx.heading(
+                        State.selected_task["title"],
+                        size="5",
+                        weight="bold",
+                    ),
+                    rx.spacer(),
+                    rx.dialog.close(
+                        rx.button(
+                            rx.icon("x", size=18),
+                            variant="ghost",
+                            size="2",
+                            cursor="pointer",
+                        ),
+                    ),
+                    width="100%",
+                    align="center",
+                ),
+                rx.divider(),
+                rx.vstack(
+                    rx.text("Description", size="2", weight="bold", color=rx.color("gray", 11)),
+                    rx.text(
+                        State.selected_task["description"],
+                        size="2",
+                        color=rx.color("gray", 10),
+                        line_height="1.6",
+                    ),
+                    spacing="2",
+                    align="start",
+                    width="100%",
+                ),
+                rx.divider(),
+                rx.hstack(
+                    rx.vstack(
+                        rx.text("Story", size="1", color=rx.color("gray", 9)),
+                        rx.badge(
+                            State.selected_task["story_title"],
+                            color_scheme="blue",
+                            variant="soft",
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    rx.vstack(
+                        rx.text("Status", size="1", color=rx.color("gray", 9)),
+                        rx.badge(
+                            State.selected_task["status"],
+                            color_scheme="gray",
+                            variant="soft",
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    rx.vstack(
+                        rx.text("Assigned To", size="1", color=rx.color("gray", 9)),
+                        rx.text(
+                            State.selected_task["assigned_to"],
+                            size="2",
+                            weight="medium",
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    spacing="6",
+                    width="100%",
+                ),
+                spacing="4",
+                width="100%",
+            ),
+            max_width="600px",
+            padding="24px",
+        ),
+        open=State.show_task_modal,
+        on_open_change=State.close_task_modal,
+    )
+
+
+def story_detail_modal() -> rx.Component:
+    """Modal to show full story details."""
+    return rx.dialog.root(
+        rx.dialog.content(
+            rx.vstack(
+                rx.hstack(
+                    rx.icon("book_open", size=24, color=rx.color("grass", 9)),
+                    rx.heading(
+                        State.selected_story["title"],
+                        size="5",
+                        weight="bold",
+                    ),
+                    rx.spacer(),
+                    rx.dialog.close(
+                        rx.button(
+                            rx.icon("x", size=18),
+                            variant="ghost",
+                            size="2",
+                            cursor="pointer",
+                        ),
+                    ),
+                    width="100%",
+                    align="center",
+                ),
+                rx.divider(),
+                rx.vstack(
+                    rx.text("Description", size="2", weight="bold", color=rx.color("gray", 11)),
+                    rx.text(
+                        State.selected_story["description"],
+                        size="2",
+                        color=rx.color("gray", 10),
+                        line_height="1.6",
+                    ),
+                    spacing="2",
+                    align="start",
+                    width="100%",
+                ),
+                rx.divider(),
+                rx.hstack(
+                    rx.vstack(
+                        rx.text("PRD", size="1", color=rx.color("gray", 9)),
+                        rx.text(
+                            State.selected_story["prd_title"],
+                            size="2",
+                            weight="medium",
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    rx.vstack(
+                        rx.text("Status", size="1", color=rx.color("gray", 9)),
+                        rx.badge(
+                            State.selected_story["status"],
+                            color_scheme=rx.cond(
+                                State.selected_story["status"] == "done",
+                                "green",
+                                rx.cond(
+                                    State.selected_story["status"] == "in_progress",
+                                    "blue",
+                                    "gray",
+                                ),
+                            ),
+                            variant="soft",
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    rx.vstack(
+                        rx.text("Progress", size="1", color=rx.color("gray", 9)),
+                        rx.text(
+                            f"{State.selected_story['completed_tasks']}/{State.selected_story['total_tasks']} tasks ({State.selected_story['progress']:.0f}%)",
+                            size="2",
+                            weight="medium",
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    spacing="6",
+                    width="100%",
+                ),
+                spacing="4",
+                width="100%",
+            ),
+            max_width="600px",
+            padding="24px",
+        ),
+        open=State.show_story_modal,
+        on_open_change=State.close_story_modal,
     )
 
 
 def project_details_page() -> rx.Component:
     """Project details page with stories and task board."""
     return rx.box(
+        # Modals
+        task_detail_modal(),
+        story_detail_modal(),
+        # Main content
         rx.vstack(
             # Compact header with all info in one card
             rx.card(
@@ -736,25 +946,15 @@ def project_details_page() -> rx.Component:
                         size="2",
                     ),
                     rx.box(width="16px"),  # Spacer
-                    # Project icon and info
+                    # Project icon and name with tooltip
                     rx.icon("folder", size=24, color=rx.color("grass", 9)),
-                    rx.vstack(
+                    rx.tooltip(
                         rx.heading(
                             State.selected_project["name"],
                             size="5",
                             weight="bold",
                         ),
-                        rx.text(
-                            State.selected_project["description"],
-                            size="1",
-                            color=rx.color("gray", 10),
-                            overflow="hidden",
-                            text_overflow="ellipsis",
-                            white_space="nowrap",
-                            max_width="500px",
-                        ),
-                        spacing="0",
-                        align="start",
+                        content=State.selected_project["description"],
                     ),
                     rx.spacer(),
                     # Stats inline in header
